@@ -1,4 +1,4 @@
-# timeseries
+# gedisens
 
 The aim of the project is to analyze the options to assess vertical
 forest strucutre from ALS and GEDI LiDAR data.

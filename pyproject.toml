@@ -1,8 +1,8 @@
 [tool.poetry]
 name = "gedisens"
-version = "0.1.0"
+version = "0.1.1"
 description = ""
-authors = ["Your Name <you@example.com>"]
+authors = ["Florian Lippl"]
 readme = "README.md"
 packages = [{include = "gedisens", from = "src"}]
 

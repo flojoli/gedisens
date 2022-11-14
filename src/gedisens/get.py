@@ -1,0 +1,116 @@
+import numpy as np
+import pandas as pd
+
+def get_beam(shot_number,h5):
+    """Looks for the beam with which shot was obtained.
+
+    Args:
+
+        shot_number (int)
+
+        h5 (hdf5)
+
+    Returns: string of beam name for given shot number
+
+    """
+
+    for beam in ["BEAM0000","BEAM0001","BEAM0010","BEAM0011",
+                 "BEAM0101","BEAM0110","BEAM1000","BEAM1011"]:
+
+        if shot_number in h5[beam]['shot_number'][:]:
+            break
+
+        else:
+            print("Beam: not found and set to nan.")
+            beam = np.nan
+            continue
+
+    return beam
+
+
+def _get_waveform_series(df,dz,data_src):
+    """Creates a pandas series with x and y data.
+
+       function can only handle dataframe with single shot.
+
+    Args:
+
+        df (pandas datagrame): pandas dataframe containing data.
+
+        dz (int): integer containing vertical step size.
+
+        data_src (str): either GEDI or ALS
+
+    Returns: dataframe with x and y axis values
+
+    """
+    x_vector = [df.iloc[:1, i].values[0]
+                for i in range(1, len(df.columns))]
+
+    if data_src == "GEDI":
+        x_vector_name = "Amplitude"
+
+    elif data_src == "ALS":
+        x_vector_name = "Pulse"
+
+    x_vector = pd.Series(x_vector, name=x_vector_name)
+
+    y_vector = [(dz * i) + dz/2
+                  for i in range(1, len(df.columns))]
+    y_vector = pd.Series(y_vector, name="Elevation")
+
+    return x_vector, y_vector
+
+
+def get_structure_params(shot_number, h5, layer):
+    """Get pavd, pai or cover for ONE gedi shot.
+
+       L2B files passed to function in order to check in which file the
+       shotnumber can be found
+
+    Args:
+
+        shot_number (uint64): converted to np.unit64
+
+        h5 (h5 file): file containing pavd,pai, canopy cover
+
+        feature (str) : string of which feature to get
+                        pavd, pai, cover
+
+    Returns: list with shot number, shot elevation, feature
+
+    """
+
+    # do we really need that?
+    shot_number = np.uint64(shot_number)
+
+    layer = f"{layer}_z"
+
+    try:
+        beam = get_beam(shot_number, fileh5)
+        # get index of shot
+        shot_number_id = list(
+            fileh5[beam]['shot_number'][:]).index(shot_number)
+
+        shotElev = fileh5[beam]['geolocation/elev_lowestmode'][()
+                                                               ][shot_number_id]
+        shotLats = fileh5[beam]['geolocation/lat_lowestmode'][()
+                                                              ][shot_number_id]
+        shotLons = fileh5[beam]['geolocation/lon_lowestmode'][()
+                                                              ][shot_number_id]
+        shotLayer = fileh5[beam][layer][()][shot_number_id]
+        shotFHD = fileh5[beam]['fhd_normal'][()][shot_number_id]
+        dz = fileh5[beam]['ancillary/dz'][0]
+        structure_param = []
+
+        for i, e in enumerate(range(len(shotLayer))):
+            # Append tuple of shot number, elevation, and PAVD
+            structure_param.append(
+                (shot_number,  shotElev + dz * i, shotLayer[i], shotFHD))
+
+        return structure_param
+
+    except:
+        print("next file")
+
+    return

@@ -28,7 +28,7 @@ def get_beam(shot_number,h5):
     return beam
 
 
-def _get_waveform_series(df,dz,data_src):
+def _get_waveform_series(df,dz,data_name):
     """Creates a pandas series with x and y data.
 
        function can only handle dataframe with single shot.
@@ -39,21 +39,14 @@ def _get_waveform_series(df,dz,data_src):
 
         dz (int): integer containing vertical step size.
 
-        data_src (str): either GEDI or ALS
+        data_src (str): either Amp or Pulse
 
     Returns: dataframe with x and y axis values
 
     """
     x_vector = [df.iloc[:1, i].values[0]
                 for i in range(1, len(df.columns))]
-
-    if data_src == "GEDI":
-        x_vector_name = "Amplitude"
-
-    elif data_src == "ALS":
-        x_vector_name = "Pulse"
-
-    x_vector = pd.Series(x_vector, name=x_vector_name)
+    x_vector = pd.Series(x_vector, name=data_name)
 
     y_vector = [(dz * i) + dz/2
                   for i in range(1, len(df.columns))]

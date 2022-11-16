@@ -1,214 +1,130 @@
-import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from get import _get_waveform_series
-from gediplot_project.stats import Stats
+from calc import vector_preperation
+from stats import Stats
 
-def plot_gedi_als_structure(als_df, gedi_df,numb_lay_file,
-                            shot_number_list, dz, output_dir=False, l2b_dir=False,
-                            fhd=False, variance=False, std=False,numb_lay=False):
+def plot_gedi_als_structure(df,shot_number, dz=1, output_dir=False,
+                            fhd=False, stdv_var=False, numb_lay=False):
     """Plot GEDI and ALS amplitude/pulse vertical structure.
 
-    Command: plot_gedi_als_structure(als_file,gedi_file,one_layer,1,
-                                     output_name="Z:/GEDI_ALS_1layer")
-             see tmp/plot_ALS_GEDI_layer_calc
-    Parameters
-    ----------
-    als_pulse_fn : string
-        Filename of file containing ALS pulse data.
-    gedi_amplitude_fn : string
-        Filename of file containing GEDI amplitude data.
-    shot_number_list : list with strings
-        List containing all shotnumbers which should be plotted.
-    dz : int
-        Step size of the averaging of full waveform (e.g. 1m).
-    output_name : String, optional
-        Outputname if file is saved. The default is False.
-    l2b_dir : string, optional
-        If structure parameters are calcultaed. The default is False.
-    fhd : TYPE, optional
-        DESCRIPTION. The default is False.
-    variance : TYPE, optional
-        DESCRIPTION. The default is False.
-    std : TYPE, optional
-        DESCRIPTION. The default is False.
-    save : TYPE, optional
-        DESCRIPTION. The default is True.
+    Command: plot_gedi_als_structure(df,shot_number="35070300200196495",dz=1,output_dir=".",numb_lay=True)
 
-    Returns
-    -------
-    None.
+    Args:
+
+        df (pandas dataframe)
+
+        shot_number (str): shot_number of interest in df
+
+        dz (int): vertical step size. Default is 1.
+                  if other vertical steps are calculated
+                  other dz can be used.
+
+        fhd (bool): optional if fhd values are broadcasted
+
+        numb_lay (bool): optional if number of layer values are broadcasted
+
+        stdv_var (bool): optional if stdv and variance are broadcasted
+
+        output_dir (str): where plot is saved
+
+    Returns: Plot with GEDI and ALS structure and calculated features of footprint
 
     """
 
     # tree height from 1m to 50m
-    als_df = als_df[["Shot_Numbe"] +
+    df = df[df["Shot_Numbe"] == shot_number]
+    als_df = df[["Shot_Numbe"] +
                     [f"Pulse{i}_{i+dz}" for i in range(1, 49, dz)]]
 
-    gedi_df = gedi_df[["Shot_Numbe"] +
+    gedi_df = df[["Shot_Numbe"] +
                       [f"Amp{i}_{i+dz}" for i in range(1,49, dz)]]
 
-    plot_size = len(shot_number_list)
-    col_row = np.ceil(np.sqrt(plot_size)).astype(int)
 
+    fig = plt.figure(figsize=(30,30))
+    # ax1 = fig.add_subplot(1, 1, 1)
+    plt.tick_params(labelcolor='none', which='both', top=False, bottom=False, left=False, right=False)
+    ax1 = fig.add_subplot(1, 1, 1)
+    # ALS plot set up
+    x_als, y_als = _get_waveform_series(als_df,dz,data_name="Pulse")
 
-    fig = plt.figure(figsize=(30, 30))
+    # GEDI plot set up
+    x_gedi, y_gedi = _get_waveform_series(gedi_df,dz,data_name="Amplitude")
 
+    wave_amp = pd.concat(([y_gedi, x_gedi]), axis=1)
+    wave_amp = wave_amp[wave_amp.Amplitude > 0]
+    wave_amp["Amplitude"] = wave_amp.Amplitude/wave_amp.Amplitude.sum()*100
 
-    for plot in range(0, plot_size):
+    # ALS plot
+    h1 = ax1.barh(y_als, x_als, height=dz-0.3,color="forestgreen",
+                  alpha=0.75, label="ALS return")
+    # GEDI plot
+    ax2 = ax1.twiny()
+    h2 = ax2.plot(wave_amp.Amplitude, wave_amp.Elevation, color="black",
+                   linewidth=4, label="GEDI waveform")
 
-        fig.add_subplot(111, frameon=False)
-        plt.tick_params(labelcolor='none', which='both', top=False, bottom=False, left=False, right=False)
+    ax1.set_xlabel("ALS returns [%]",fontsize=30,labelpad=14)
+    ax1.set_ylabel("Height [m]",fontsize=30,labelpad=14)
+    ax1.set_ylim(0,51)
+    ax1.set_yticks([0,5,10,15,20,25,30,35,40,45,50])
+    ax1.grid()
+    ax1.tick_params(labelsize=30)
 
-        if (col_row % 2 == 0):
-            sub = fig.add_subplot(1, 2, plot+1)
+    ax2.set_xlabel("GEDI amplitude [%]",fontsize=30,labelpad=14)
+    ax2.set_xlim(0,10)
+    ax2.tick_params(labelsize=30)
 
-        else:
-            sub = fig.add_subplot(col_row, col_row-1, plot+1)
+    if fhd == True:
+       gedi_fhd_l2b = float(df["gediFHDl2b"])
+       gedi_fhd_cal = float(df["gediFHDcal"])
+       als_fhd = float(df["alsFHD"])
+       als_fhd_co = float(df["alsFHDco"])
 
-        # ALS plot set up
-        als_shot = als_df[als_df["Shot_Numbe"] == shot_number_list[plot]]
-        x_als, y_als = _get_waveform_series(als_shot,dz,data_src="ALS")
+       ax2.set_title("GEDI shot ID: " + shot_number + "\n"
+                      + r"GEDI FHD$_{\mathrm{L2B}}$:  " +
+                       str(round(gedi_fhd_l2b, 2)) + "\n"
+                      + r"GEDI FHD$_{\mathrm{calc}}$: " +
+                       str(gedi_fhd_cal) + "\n"
+                      + "ALS FHD :  " + str(als_fhd) + "\n"
+                      + "ALS$_{\mathrm{co}}$ FHD :  " +
+                       str(als_fhd_co),
+                      loc="right", fontsize="30", x=0.97, y=0.9,
+                      bbox=dict(facecolor='1', edgecolor='black', pad=5))
 
-        # GEDI plot set up
-        gedi_shot = gedi_df[gedi_df["Shot_Numbe"] == shot_number_list[plot]]
-        x_gedi, y_gedi = _get_waveform_series(gedi_shot,dz,data_src="GEDI")
+    elif numb_lay == True:
+         ax2.set_title("GEDI shot ID: " + shot_number + "\n"
+                       + "GEDI NoL: " + str(int(df["NoL_GEDI"])) + "\n"
+                       + "ALS$_{\mathrm{co}}$ NoL: " + str(int(df["NoL_ALS"])),
+                       loc="right", fontsize="30", x=0.97, y=0.9,
+                       bbox=dict(facecolor='1', edgecolor='black', pad=5))
 
+    elif stdv_var == True:
 
-        wave_amp = pd.concat(([y_gedi, x_gedi]), axis=1)
-        wave_amp = wave_amp[wave_amp.Amplitude > 0]
-        wave_amp["Amplitude"] = wave_amp.Amplitude/wave_amp.Amplitude.sum()*100
+         gedi_variance = Stats(vector_preperation(gedi_df, "Amplitude")).variance
+         gedi_variance = round(gedi_variance, 2)
+         gedi_stdv = Stats(vector_preperation(gedi_df, "Amplitude")).stdv
+         gedi_stdv = round(gedi_stdv, 2)
 
-        if fhd:
-            # GEDI fhd
-            structure = structureProfile(shot_number, l2b_dir, layer='pavd')
-            structure = structure.loc[:, [
-                "elevation", "pavd", "shotFHD", "shot_number"]]
-            gedi_fhd_l2b = structure.shotFHD[0]
+         als_variance = Stats(vector_preperation(als_df, "Pulse")).variance
+         als_variance = round(als_variance, 2)
+         als_stdv = Stats(vector_preperation(als_df, "Pulse")).stdv
+         als_stdv = round(als_stdv, 2)
 
-            # GEDI fhd calculated
-            gedi_fhd_calc = calculate_fhd(shp_file=gedi_amplitude_file,
-                                          shot_number=shot_number, data_source="GEDI")
-            # ALS fhd calculated
-            als_fhd_calc = calculate_fhd(shp_file=als_pulse_file,
-                                         shot_number=shot_number, data_source="ALS")
+         ax2.set_title("GEDI shot ID: " + shot_number + "\n"
+                       + "GEDI variance: " + str(gedi_variance) + "\n"
+                       + "GEDI stdv: " + str(gedi_stdv) + "\n"
+                       + "ALS$_{\mathrm{co}}$ variance: " + str(als_variance) + "\n"
+                       + "ALS$_{\mathrm{co}}$ stdv: " + str(als_stdv),
+                       loc="right", fontsize="30", x=0.97, y=0.85,
+                       bbox=dict(facecolor='1', edgecolor='black', pad=5))
 
-        if variance:
-            gedi_variance = Stats(vector_preperation(
-                gedi_df_new, "GEDI")).variance
-            gedi_variance = round(gedi_variance, 2)
-            try:
-                als_variance = Stats(vector_preperation(
-                    als_df_new, "ALS")).variance
-                als_variance = round(als_variance, 2)
-            except:
-                continue
+    else:
+        ax2.set_title("GEDI shot ID: " + shot_number,
+                       loc="right", fontsize="30", x=0.97, y=0.9,
+                       bbox=dict(facecolor='1', edgecolor='black', pad=5))
 
-        if std:
-            gedi_std = Stats(vector_preperation(gedi_df_new, "GEDI")).stdv
-            gedi_std = round(gedi_std, 2)
-            als_std = Stats(vector_preperation(als_df_new, "ALS")).stdv
-            als_std = round(als_std, 2)
-
-        # ALS plot
-        h1 = sub.barh(y_als, x_als, height=dz-0.3,color="forestgreen",
-                      alpha=0.75, label="ALS return")
-        #a,b,c,d title
-        sub.set_title(["(a)","(b)","(c)","(d)","(e)","(f)"][plot],loc="left",y=1.1,fontsize="40",
-                     bbox=dict(facecolor='1', edgecolor='none', pad=1.0))
-
-        #sub.set_title(str(shot_number),loc="left",fontsize="5",
-        #             bbox=dict(facecolor='1', edgecolor='none', pad=3.0))
-
-        # GEDI plot
-        sub2 = sub.twiny()
-        h2 = sub2.plot(wave_amp.Amplitude, wave_amp.Elevation, color="black",
-                       linewidth=4, label="GEDI waveform")
-
-
-        sub.set_xlabel("ALS returns [%]",fontsize=30,labelpad=14)
-        sub.set_ylabel("Height [m]",fontsize=30,labelpad=14)
-        sub.set_ylim(0,51)
-
-        #sub.set_xlim(0,36)
-        sub.set_yticks([0,5,10,15,20,25,30,35,40,45,50])
-        sub.grid()
-        sub.tick_params(labelsize=20)
-
-        sub2.tick_params(labelsize=20)
-        sub2.set_xlim(0,10)
-        sub2.set_xlabel("GEDI amplitude [%]",fontsize=30,labelpad=14)
-
-        #sub2.set_title(str(shot_number), y=0.9)
-
-        # option for all parameters
-        if fhd == True:
-            sub2.set_title("GEDI shot ID: " + str(shot_number) + "\n"
-                           + r"GEDI FHD$_{\mathrm{L2B}}$:  " +
-                           str(round(gedi_fhd_l2b, 2)) + "\n"
-                           + r"GEDI FHD$_{\mathrm{calc}}$: " +
-                           str(gedi_fhd_calc.GEDI_fhd_calc.values[0]) + "\n"
-                           + "ALS$_{\mathrm{co}}$ FHD :  " +
-                           str(als_fhd_calc.ALS_fhd_calc.values[0]),
-                           loc="right", fontsize="30", x=0.97, y=0.9,
-                           bbox=dict(facecolor='1', edgecolor='black', pad=5))
-
-        elif numb_lay == True:
-            sub2.set_title("GEDI shot ID: " + str(shot_number) + "\n"
-                           + "GEDI number of layers: " +
-                           str(numb_lay_file[numb_lay_file["Shot_Numbe"] == shot_number].NrLay_GEDI.values[0].astype(int)) + "\n"
-                           + "ALS$_{\mathrm{co}}$ number of layers: " +
-                           str(numb_lay_file[numb_lay_file["Shot_Numbe"] == shot_number].NrLay_ALS.values[0].astype(int)),
-                           loc="right", fontsize="30", x=0.97, y=0.75,
-                           bbox=dict(facecolor='1', edgecolor='black', pad=5))
-
-        else:
-            sub2.set_title("GEDI shot ID: " + str(shot_number),
-                           loc="right", fontsize="30", x=0.97, y=0.9,
-                           bbox=dict(facecolor='1', edgecolor='black', pad=5))
-
-
-
-                        #,weight="bold", x=0.9,y = 0.76,alpha=1,
-                        #bbox=dict(boxstyle="round", ec=(1., 0.5, 0.5),fc=(1., 0.8, 0.8)))
-
-
-
-
-        #TODO
-        """
-        sub2.set_title(shot_number + "\n"
-                        + "GEDI FHD (L2B):  " + str(round(gedi_fhd_l2b, 2)) + "\n"
-                        + "GEDI FHD (calc): " + str(gedi_fhd_calc.GEDI_fhd_calc.values[0])+ "\n"
-                        + "ALS FHD (calc):  " + str(als_fhd_calc.ALS_fhd_calc.values[0]) + "\n"
-                        + "GEDI std:        " + str(gedi_std) + "\n"
-                        + "ALS std:         " + str(als_std) + "\n"
-                        + "GEDI variance:  " + str(gedi_variance) + "\n"
-                        + "ALS variance:    " + str(als_variance),weight="bold", x=0.7,y = 0.76,alpha=1,
-                        bbox=dict(boxstyle="round", ec=(1., 0.5, 0.5),fc=(1., 0.8, 0.8)))
-        """
-
-
-    # for common legend top right
-    plt.subplots_adjust(
-                    top=0.9,
-                    wspace=0.15,
-                    hspace=0.4)
     fig.legend((h1, h2), labels=["ALS", "GEDI"],loc="lower right",
-                bbox_to_anchor=(0.899, 0.13), fontsize=30)
-
-    #fig.text(0.1, 0.43, "Height [m]", fontsize="25",
-    #         ha="center",va="bottom", rotation="vertical")
-    #fig.text(
-    #    0.43, 0.1, "GEDI amplitude, ALS return pulse [%]", fontsize="25", va="center")
-
-    #fig.text(0.1, 0.43, 'by-Shubham Singh',
-    #    verticalalignment ='bottom',
-    #    horizontalalignment ='left',
-    #    rotation = 'vertical',
-    #    color ='green',
-    #    fontsize = 30)
-    #fig.suptitle("GEDI amplitude and ALS pulse", fontsize="24", y=0.93)
+               bbox_to_anchor=(0.899, 0.13), fontsize=30)
 
     if output_dir:
         fig.savefig(f"{output_dir}/GEDIamp_vs_ALSpulse.png",dpi=300,

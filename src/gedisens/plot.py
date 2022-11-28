@@ -1,11 +1,10 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-from get import _get_waveform_series
-from calc import vector_preperation
-from stats import Stats
+from gedisens.get import _get_waveform_series
+from gedisens.calc import vector_preperation
+from gedisens.stats import Stats
 
-def plot_gedi_als_structure(df,shot_number, dz=1, output_dir=False,
-                            fhd=False, stdv_var=False, numb_lay=False):
+def plot_gedi_als_structure(df,shot_number, dz=1, add_info="",output_dir=""):
     """Plot GEDI and ALS amplitude/pulse vertical structure.
 
     Command: plot_gedi_als_structure(df,shot_number="35070300200196495",dz=1,output_dir=".",numb_lay=True)
@@ -35,10 +34,10 @@ def plot_gedi_als_structure(df,shot_number, dz=1, output_dir=False,
     # tree height from 1m to 50m
     df = df[df["Shot_Numbe"] == shot_number]
     als_df = df[["Shot_Numbe"] +
-                    [f"Pulse{i}_{i+dz}" for i in range(1, 49, dz)]]
+                    [f"Pulse{i}_{i+dz}" for i in range(1, 50, dz)]]
 
     gedi_df = df[["Shot_Numbe"] +
-                      [f"Amp{i}_{i+dz}" for i in range(1,49, dz)]]
+                      [f"Amp{i}_{i+dz}" for i in range(1,50, dz)]]
 
 
     fig = plt.figure(figsize=(30,30))
@@ -74,7 +73,7 @@ def plot_gedi_als_structure(df,shot_number, dz=1, output_dir=False,
     ax2.set_xlim(0,10)
     ax2.tick_params(labelsize=30)
 
-    if fhd == True:
+    if add_info == "fhd":
        gedi_fhd_l2b = float(df["gediFHDl2b"])
        gedi_fhd_cal = float(df["gediFHDcal"])
        als_fhd = float(df["alsFHD"])
@@ -88,17 +87,17 @@ def plot_gedi_als_structure(df,shot_number, dz=1, output_dir=False,
                       + "ALS FHD :  " + str(als_fhd) + "\n"
                       + "ALS$_{\mathrm{co}}$ FHD :  " +
                        str(als_fhd_co),
-                      loc="right", fontsize="30", x=0.97, y=0.9,
+                      loc="right", fontsize="30", x=0.97, y=0.85,
                       bbox=dict(facecolor='1', edgecolor='black', pad=5))
 
-    elif numb_lay == True:
+    elif add_info == "numb_lay":
          ax2.set_title("GEDI shot ID: " + shot_number + "\n"
                        + "GEDI NoL: " + str(int(df["NoL_GEDI"])) + "\n"
                        + "ALS$_{\mathrm{co}}$ NoL: " + str(int(df["NoL_ALS"])),
                        loc="right", fontsize="30", x=0.97, y=0.9,
                        bbox=dict(facecolor='1', edgecolor='black', pad=5))
 
-    elif stdv_var == True:
+    elif add_info == "stdv_var":
 
          gedi_variance = Stats(vector_preperation(gedi_df, "Amplitude")).variance
          gedi_variance = round(gedi_variance, 2)
@@ -127,9 +126,74 @@ def plot_gedi_als_structure(df,shot_number, dz=1, output_dir=False,
                bbox_to_anchor=(0.899, 0.13), fontsize=30)
 
     if output_dir:
-        fig.savefig(f"{output_dir}/GEDIamp_vs_ALSpulse.png",dpi=300,
+
+        plt.savefig(f"{output_dir}/GEDIamp_vs_ALSpulse.png",
                     bbox_inches='tight')
         plt.close()
 
     else:
+        plt.rcParams["figure.dpi"] = 300
+        plt.show()
+
+
+def plot_correlation(df,x_var,y_var,model,r2,predictions,rmse,output_dir):
+    """Plot correlation between two variables.
+
+    Args:
+
+        df (pandas dataframe): containing the variables
+
+        model (Regression Wrapper): statsmodels output
+
+        x_var (str): use ALS variable here
+
+        y_var (str): use GEDI variable here
+
+        model (Regression Wrapper): statsmodels output
+
+        r2 (np.float64): R squared of OLS model
+
+        prediction (pandas series): predictions of the variable
+
+        rmse (float): root mean squared error of estimation
+
+        output_dir (str): where plot is saved
+
+    Returns: Correlation plot
+
+    """
+
+
+    fig, ax = plt.subplots(figsize=(20,15))
+
+    ax.axline((1,1), slope=1, color="black", linewidth=4, linestyle="--")
+
+    ax.plot(df[x_var], df[y_var], linestyle="none",marker=".",markersize=15,
+            label=f"data points: {len(df)}")
+
+    ax.plot(df[x_var], predictions, linewidth=8, color="red",
+            label=f"""Regression line: y = {model.params[0].round(2)}+
+                   {model.params[1].round(2)}x""")
+
+    ax.plot([],[],marker="",label=f"RMSE: {rmse}",color="None")
+    ax.plot([],[],marker="",label=f"R²: {r2}",color="None")
+
+    ax.tick_params(axis="both",labelsize=20)
+
+    ax.set_xlim(left=0)
+    ax.set_ylim(bottom=0)
+    ax.set_xlabel(x_var, fontsize=25)
+    ax.set_ylabel(y_var, fontsize=25)
+    ax.set_title(f"Correlation of {x_var} and {y_var}",fontsize=30)
+
+    plt.legend(fontsize=25, markerscale=2, loc="lower right", labelspacing=1)
+    plt.grid()
+
+    if output_dir:
+        plt.savefig(f"{output_dir}/correlation_plot_{y_var}_vs_{x_var}.png",dpi=300,
+                    bbox_inches='tight')
+        plt.close()
+
+    else:
+        plt.rcParams["figure.dpi"] = 300
         plt.show()

@@ -44,6 +44,7 @@ def _get_waveform_series(df,dz,data_name):
     Returns: dataframe with x and y axis values
 
     """
+
     x_vector = [df.iloc[:1, i].values[0]
                 for i in range(1, len(df.columns))]
     x_vector = pd.Series(x_vector, name=data_name)
@@ -80,20 +81,18 @@ def get_structure_params(shot_number, h5, layer):
     layer = f"{layer}_z"
 
     try:
-        beam = get_beam(shot_number, fileh5)
+        beam = get_beam(shot_number, h5)
         # get index of shot
         shot_number_id = list(
-            fileh5[beam]['shot_number'][:]).index(shot_number)
+            h5[beam]["shot_number"][:]).index(shot_number)
 
-        shotElev = fileh5[beam]['geolocation/elev_lowestmode'][()
-                                                               ][shot_number_id]
-        shotLats = fileh5[beam]['geolocation/lat_lowestmode'][()
+        shotElev = h5[beam]["geolocation/elev_lowestmode"][()][shot_number_id]
+        shotLats = h5[beam]["geolocation/lat_lowestmode"][()][shot_number_id]
+        shotLons = h5[beam]["geolocation/lon_lowestmode"][()
                                                               ][shot_number_id]
-        shotLons = fileh5[beam]['geolocation/lon_lowestmode'][()
-                                                              ][shot_number_id]
-        shotLayer = fileh5[beam][layer][()][shot_number_id]
-        shotFHD = fileh5[beam]['fhd_normal'][()][shot_number_id]
-        dz = fileh5[beam]['ancillary/dz'][0]
+        shotLayer = h5[beam][layer][()][shot_number_id]
+        shotFHD = h5[beam]["fhd_normal"][()][shot_number_id]
+        dz = h5[beam]["ancillary/dz"][0]
         structure_param = []
 
         for i, e in enumerate(range(len(shotLayer))):

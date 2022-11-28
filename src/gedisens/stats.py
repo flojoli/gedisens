@@ -25,23 +25,17 @@ def ols_regression(df,y_var,x_var,reconstr=False):
     predictions
     rmse
     """
-
-    if reconstr == 'True':
-        y_var='RH_100'
-        print('--> Reconstruction of RH 100')
-    else:
-        y_var=y_var
-
+    df = df[df[x_var]!=0]
+    df = df[df[y_var]!=0]
     x = df[x_var]
-
     y = df[y_var]
+
     x = sm.add_constant(x)
     model = sm.OLS(y,x).fit()
     predictions= model.predict(x)
 
     rmse = np.sqrt(mean_squared_error(predictions,y)).round(2)
     r2 = round(model.rsquared,2)
-    print('3. Regression: DONE')
 
     return df, model, x, r2, predictions, rmse
 

@@ -25,13 +25,7 @@ python3 -m venv env.
 source env/bin/activate.
 ```
 
-3. For some reason one has to do:
-
-```bash
-pyton setup.py bdist_wheel.
-```
-
-4. Use the following command in the base directory to install:
+3. Use the following command in the base directory to install:
 
 ```bash
 python -m pip install .
@@ -46,9 +40,13 @@ python -m pip install -e .
 
 ## How to run it
 
-In order to run it an example is given below:
-
+In order to run it examples are given below:
+Correlation plot
 ```bash
-timeseries -csv <filename> -anom -linfit -dep_var <var name> -ind_var <var name> -anom_plot 
+gedisens -data-file <filepath+name>  -correlation-plot -x-var alsFHD -y-var gediFHDcal -out-dir <outpath>
+```
 
+Structure plot
+```bash
+gedisens -data-file <filepath+name> -structure-plot -dz 1 -shot-number 35070600200401943 -add-info fhd -out-dir <outpath>
 ```

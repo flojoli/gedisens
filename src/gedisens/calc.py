@@ -5,7 +5,7 @@ def vector_preperation(df, data_name):
 
        df (pandas dataframe)
 
-       vector_name (str) : in this study either Amplitude
+       data_name (str) : in this study either Amplitude
                            or Pulse.
 
     Returns: vector with dropped 0s
@@ -32,3 +32,18 @@ def vector_preperation(df, data_name):
     values = list(df[["Index", data_name]].apply(tuple, axis=1))
 
     return values
+
+
+def calc_variance(data):
+    """Calculates variance of grouped variable.
+
+    Args:
+
+    data (list): list of grouped data
+
+    Returns: list of variance for each group
+    """
+
+    variance_list = [group.var().round(2) for group in data]
+
+    return variance_list

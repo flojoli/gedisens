@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from gedisens.get import _get_waveform_series
@@ -193,6 +194,73 @@ def plot_correlation(df,x_var,y_var,model,r2,predictions,rmse,output_dir):
         plt.savefig(f"{output_dir}/correlation_plot_{y_var}_vs_{x_var}.png",dpi=300,
                     bbox_inches='tight')
         plt.close()
+
+    else:
+        plt.rcParams["figure.dpi"] = 300
+        plt.show()
+
+
+def plot_boxplot(data,variance,output_dir=""):
+    """Plots fhd values seperated into interpreted structure.
+
+    Args:
+
+        data (list): list of values separated in structure
+
+        variance (list): list of variance for each category
+
+        output_dir (str): where plot is saved
+
+    Returns: FHD boxplot
+    """
+
+    fig, ax = plt.subplots()
+
+    meanpointprops = dict(marker="D", markeredgecolor="black",
+                          markerfacecolor="firebrick",markersize=20)
+
+    bp = ax.boxplot(data,meanprops=meanpointprops, showmeans=True)
+
+    for median in bp["medians"]:
+        median.set(color="black",linewidth=2)
+    for whiskers in bp["whiskers"]:
+        whiskers.set(linewidth=2)
+    for caps in bp["caps"]:
+        caps.set(linewidth=2)
+
+    ax.set_xlabel("Structure", fontsize=25)
+    ax.set_ylabel("FHD",fontsize=25)
+    ax.tick_params("both",labelsize=20)
+    ax.set_xticks([1,2,3],["low","medium","high"])
+    ax.grid()
+
+    for (sub_meds,sub_caps,sub_variance) in zip(
+            range(0,len(bp["medians"])),range(0,len(bp["caps"]),2),range(0,len(variance))):
+
+        med = bp["medians"][sub_meds]
+        mean = bp["means"][sub_meds]
+        vari = variance[sub_variance]
+        xpos = med.get_xdata()
+        xoff = 0.1 *(xpos[1] - xpos[0])
+        xlabel= xpos[1] - xoff
+        capbottom = bp["caps"][sub_caps].get_ydata()[0]
+
+        ax.text(xlabel,capbottom,
+                f"n = {str(len(data[sub_meds]))}", va="center", fontsize=20, fontweight="bold")
+        ax.text(xpos[1] + xoff, mean.get_ydata()[0],
+                f"mean = {str(mean.get_ydata()[0].round(2))}", fontsize=20, fontweight="bold")
+        ax.text(xpos[1] + xoff, mean.get_ydata()[0] - 0.05,
+                f"variance = {str((vari))}", va = "center", fontsize=20, fontweight="bold")
+
+    for i in range(len(data)):
+        x = np.repeat(i+1, len(data[i]))
+        y = data[i]
+        ax.scatter(x,y,s=50)
+
+    if output_dir:
+       plt.savefig(f"{output_dir}/boxplot.png",dpi=300,
+                   bbox_inches='tight')
+       plt.close()
 
     else:
         plt.rcParams["figure.dpi"] = 300

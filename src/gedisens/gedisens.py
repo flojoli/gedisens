@@ -1,6 +1,6 @@
 import argparse
 from pathlib import Path
-from gedisens import calc, io_vec, plot,stats
+from gedisens import calc, io_vec, plot, preprocess, stats
 
 
 def gedisens():
@@ -64,6 +64,26 @@ def gedisens():
            help="y variable for correlation plot."
     )
     parser.add_argument(
+           "-boxplot",
+           dest="boxplot",
+           action="store_true",
+           help="Boxplot of variable."
+    )
+    parser.add_argument(
+           "-group",
+           dest="group",
+           choices=["StrucGEDI","StrucALS"],
+           type=str,
+           help="Group data by this group name.",
+    )
+    parser.add_argument(
+           "-group-var",
+           dest="group_var",
+           choices=["gediFHDcal","gediFHDl2b,alsFHD,alsFHDco"],
+           type=str,
+           help="Choose variable for boxplot."
+    )
+    parser.add_argument(
            "-out-dir",
            dest="output_dir",
            type=str,
@@ -87,10 +107,23 @@ def gedisens():
                                      output_dir=args.output_dir)
 
     if args.correlation_plot:
+        #TODO should not be part of CLI
         data = data[data[args.x_var]!=0]
         df, model, x, r2, predictions, rmse = stats.ols_regression(
-            data,y_var=args.y_var,x_var=args.x_var)
+            data,y_var = args.y_var,x_var=args.x_var)
 
         plot.plot_correlation(df,args.x_var,args.y_var,model,r2,
                               predictions,rmse,
                               output_dir=args.output_dir)
+
+    if args.boxplot:
+        grouped_data_list = preprocess.group_data(
+            df = data,
+            group = args.group,
+            group_var=args.group_var)
+        print(len(grouped_data_list))
+        variance_list = calc.calc_variance(grouped_data_list)
+
+        plot.plot_boxplot(data = grouped_data_list,
+                          variance = variance_list,
+                          output_dir = args.output_dir)

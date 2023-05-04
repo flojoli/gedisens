@@ -50,3 +50,13 @@ Structure plot
 ```bash
 gedisens -data-file <filepath+name> -structure-plot -dz 1 -shot-number 35070600200401943 -add-info fhd -out-dir <outpath>
 ```
+
+Calculate layers
+```bash
+gedisens -data-file <filepath+name> -layers -out-dir <outpath>
+```
+
+Calculate foliage height diversity
+```bash
+gedisens -data-file <filepath+name> -fhd -out-dir <outpath>
+```

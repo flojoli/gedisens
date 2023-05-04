@@ -1,3 +1,4 @@
+import pandas as pd
 import argparse
 from pathlib import Path
 from gedisens import calc, io_vec, plot, preprocess, stats, get       
@@ -16,9 +17,22 @@ def gedisens():
     parser.add_argument(
          "-layers",
          dest="layers",
-         type=str,
+         action="store_true",
          required=False,
          help="Layers are calculated."
+    )
+    parser.add_argument(
+         "-fhd",
+         dest="fhd",
+         action="store_true",
+         required=False,
+         help="FHD is calculated."  
+    )
+    parser.add_argument(
+         "-attribute-name",
+         dest="attr_name",
+         required=False,
+         help="Attribute name for FHD calculation."
     )
     parser.add_argument(
            "-structure-plot",
@@ -109,7 +123,16 @@ def gedisens():
     data = io_vec.shp2df(args.data_file)
 
     if args.layers:
-         
+         # TODO: yet to be tested
+         data = get.get_max_height(data)
+         data = data.apply(calc.cal_upper_percentage,axis=1)
+         io_vec.df_out(args.output_dir)    
+
+    if args.fhd:
+         # TODO: yet to be tested
+         fhd = [calc.calc_fhd(data.iloc[[i]],args.attr_name) for i in range(0,len(data))]
+         fhd = pd.concat(fhd)
+         io_vec.df_out(args.output_dir)
 
     if args.structure_plot:
         plot.plot_gedi_als_structure(data,args.shot_number,args.dz,
@@ -117,7 +140,7 @@ def gedisens():
                                      output_dir=args.output_dir)
 
     if args.correlation_plot:
-        #TODO should not be part of CLI
+        #TODO: should not be part of CLI
         data = data[data[args.x_var]!=0]
         df, model, x, r2, predictions, rmse = stats.ols_regression(
             data,y_var = args.y_var,x_var=args.x_var)

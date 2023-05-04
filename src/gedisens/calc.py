@@ -127,3 +127,44 @@ def calc_layers(row,lim_low=0.3,lim_up=0.5)
                 print("footprint has 2 layers")
                 row["NoL"] = 3
     return row
+
+
+def calc_fhd(df,attr_name):
+    """Calculates foliage height diversity.
+    
+    Args:
+    
+        df (pandas dataframe): input dataframe has one row with pulses and or
+                               other attribute to calc fhd on.
+
+        attr_name (string): name of attribute on which fhd is calculated (e.g. Pulse). 
+        
+    Returns: pandas dataframe with calculated fhd values.
+                        
+    """
+    
+    attr_df = df[[i for i in df.columns if i.startswith(attr_name)]]
+        
+    if f"{attr_name}0_1" in attr_df.columns:
+        
+        attr_df = attr_df.drop(columns=f"{attr_name}0_1")
+       
+        
+    if int(attr_df.sum(axis=1,numeric_only=True)) == 0:
+        
+        df = df.reset_index()
+        df["fhd"] = np.nan   
+                
+    else:
+        
+        attr_df = attr_df.T
+        attr_df.replace(0, np.nan, inplace=True)
+        attr_df = attr_df/attr_df.sum()
+        #attr_df.replace(0, np.nan, inplace=True)
+        attr_df = attr_df.dropna()
+     
+        log_portion = np.log(attr_df)
+        fhd = round(- (attr_df * log_portion).sum(),2)
+        df["fhd"] = fhd
+       
+    return df

@@ -17,3 +17,18 @@ def shp2df(fn):
     df = pd.DataFrame(gdf)
 
     return df
+
+def df_out(df,out_path):
+    """saves dataframe as shapefile.
+
+    Args:
+
+        df (pandas dataframe): dataframe.
+
+        out_path (string): str for the output path.
+
+    """
+
+    df = gpd.GeoDataFrame(df)
+    df.to_file(out_path + ".shp")
+

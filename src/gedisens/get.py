@@ -35,7 +35,7 @@ def _get_waveform_series(df,dz,data_name):
 
     Args:
 
-        df (pandas datagrame): pandas dataframe containing data.
+        df (pandas dataframe): pandas dataframe containing data.
 
         dz (int): integer containing vertical step size.
 
@@ -106,3 +106,22 @@ def get_structure_params(shot_number, h5, layer):
         print("next file")
 
     return
+
+def get_max_height(df):
+    """Determines upper and lower boundary of max height of profile.
+    
+    For Layer calculation RH90 is used as max height.
+
+    Args: 
+
+        df (pandas dataframe): pandas dataframe containing data.  
+    
+    Returns: dataframe with upper and lower bound of upper 5/6.
+        
+    """
+
+    df["max_height_upper"] = df.RH_90.round().astype(int)
+    df["max_height_lower"] = np.ceil(df.max_height_upper * 5/6).astype(int)
+
+    return df
+

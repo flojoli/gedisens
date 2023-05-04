@@ -1,6 +1,6 @@
 import argparse
 from pathlib import Path
-from gedisens import calc, io_vec, plot, preprocess, stats
+from gedisens import calc, io_vec, plot, preprocess, stats, get       
 
 
 def gedisens():
@@ -12,6 +12,13 @@ def gedisens():
            type=str,
            required=True,
            help="Filename of input data.",
+    )
+    parser.add_argument(
+         "-layers",
+         dest="layers",
+         type=str,
+         required=False,
+         help="Layers are calculated."
     )
     parser.add_argument(
            "-structure-plot",
@@ -100,6 +107,9 @@ def gedisens():
 
 
     data = io_vec.shp2df(args.data_file)
+
+    if args.layers:
+         
 
     if args.structure_plot:
         plot.plot_gedi_als_structure(data,args.shot_number,args.dz,

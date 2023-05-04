@@ -8,7 +8,7 @@ def vector_preperation(df, data_name):
        data_name (str) : in this study either Amplitude
                            or Pulse.
 
-    Returns: vector with dropped 0s
+    Returns: vector with dropped 0s.
 
     """
 
@@ -39,11 +39,91 @@ def calc_variance(data):
 
     Args:
 
-    data (list): list of grouped data
+        data (list): list of grouped data.
 
-    Returns: list of variance for each group
+    Returns: list of variance for each group.
+    
     """
 
     variance_list = [group.var().round(2) for group in data]
 
     return variance_list
+
+
+def calc_upper_percentage(row):
+    """Calculates the percentage of pulse contained in upper layer.
+    
+    Function will be passed to apply, therefore calculation is rowwise.
+
+    Args:
+
+        row (pandas dataframe): dataframe with one row used in apply func.
+
+    Returns: dataframe of one row with upper percentage.
+
+    """
+
+    col_list = [f"Pulse{i-1}_{i}" for i in range(row.max_height_lower,row.max_height_upper)]
+
+    above_max_lower = row[col_list].sum()
+
+    row["amp_sum_total"] = row.filter(regex="Pulse").sum()
+
+    row["upper_percentage"] = round((above_max_lower / row.amp_sum_total),2)
+
+    return row
+
+def calc_layers(row,lim_low=0.3,lim_up=0.5)
+    """Calculates the number of layers of each footprint.
+    
+    Args:
+    
+        row (pandas dataframe): dataframe with one row.
+
+        lim_low/lim_up: thresholds for applying which layer.
+                        (default:0.3;0.5)
+        
+    Returns: dataframe with one row with calculated layer.
+    
+    """
+
+    if row.upper_percentage < lim_low:
+        print("footprint has multiple layers")
+        row["NoL"] = 3
+
+    elif row.upper_percentage > lim_up:
+        print("footprint has 1 layer")
+        row["NoL"] = 1
+
+    elif (row.upper_percentage >= lim_low) and (row.upper_percentage < lim_up) and (row.max_height_upper > 6):
+        # comment: somehow problems with max_height_lower range and last point to search for
+        
+        start = np.ceil(row.max_height_upper/6).astype(int)
+        
+        max_search = row.max_height_lower - start  # search_range
+       
+        if start > max_search:
+            row["NoL"] = 1
+
+        else:
+            
+            for sextile in range(start, max_search + 1, 1):
+                
+                col_list = [f"Pulse{amp_up}_{amp_up+1}"
+                for amp_up in range(sextile - start+1, sextile + start, 1)]
+                
+                amp_sum_lower = row[col_list].sum()
+    
+                lower_percentage = amp_sum_lower / row.amp_sum_total
+                
+                if lower_percentage >= lim_low:
+                    print("footprint has 2 layers")
+                    row["NoL"] = 2
+                    break
+                else:
+                    continue
+
+            if lower_percentage < lim_low:
+                print("footprint has 2 layers")
+                row["NoL"] = 3
+    return row

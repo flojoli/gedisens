@@ -1,4 +1,4 @@
- Byte-compiled / optimized / DLL files
+# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 
@@ -30,3 +30,26 @@ pip-delete-this-directory.txt
 .cache
 nosetests.xml
 coverage.xml
+
+# Virtual environments
+.venv/
+env/
+venv/
+
+# Tool caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Outputs
+output/
+*.png
+
+# Final figures: not committed until the ALS licence is clarified
+figures/*.png
+poetry.toml

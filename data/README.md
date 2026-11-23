@@ -13,11 +13,9 @@ gedisens --data-file data/example/gedisens_example.gpkg --structure-plot \
   (Upper Austria): shot `35070600200401943` (used in the README examples)
   plus 10 randomly chosen footprints per GEDI structure class.
 - GeoPackage, EPSG:4326, one row per footprint.
-- Created with [`scripts/make_example_data.py`](../scripts/make_example_data.py)
-  (fixed random seed, reproducible).
-
-> **The ALS columns are synthetic.** They are derived from the GEDI
-> waveform plus random noise and are only meant for trying the code.
+> **The ALS columns are synthetic.** They are the GEDI waveform share in %
+> multiplied by random log-normal noise (σ = 0.4, seed 42) and rounded,
+> and are only meant for trying the code.
 > Do **not** use them for any analysis. All GEDI columns are real.
 
 | Column | Source | Content |
@@ -46,9 +44,3 @@ The full dataset is not part of this repository.
 | GEDI | NASA GEDI L2A/L2B, open data via [LP DAAC](https://lpdaac.usgs.gov/) / [ORNL DAAC](https://daac.ornl.gov/) |
 | ALS | TODO: provider, acquisition year and licence (e.g. Nationalpark Kalkalpen / Land Oberösterreich) |
 | Interpretations | TODO: who interpreted `StrucGEDI`/`StrucALS`/`NoL_*` and how |
-
-To recreate the example data from the full dataset:
-
-```bash
-poetry run python scripts/make_example_data.py /path/to/GEDI.shp
-```
